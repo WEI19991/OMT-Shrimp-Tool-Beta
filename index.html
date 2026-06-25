@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>OMT Beta · 白蝦投餵換算工具</title>
+<style>
+  :root {
+    --blue:#185FA5; --blue-light:#EBF3FB; --blue-mid:#378ADD;
+    --green:#0F6E56; --green-light:#E8F5E9;
+    --red:#8B2E02; --red-light:#FCE4D6; --red-mid:#D85A30;
+    --amber:#854F0B; --amber-light:#FFF8E1;
+    --teal:#0B6E6E; --teal-light:#E0F5F5;
+    --border:#E0E0E0; --bg:#F5F5F5; --card:#FFFFFF;
+    --text:#212121; --text2:#666;
+    --font:'Arial','PingFang TC','Microsoft JhengHei',sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:var(--font); background:var(--bg); color:var(--text); font-size:14px; min-height:100vh; }
+
+  .header { background:var(--teal); color:#fff; padding:14px 16px; }
+  .header-top { display:flex; align-items:center; justify-content:space-between; }
+  .header h1 { font-size:17px; font-weight:700; }
+  .header p  { font-size:11px; opacity:.75; margin-top:3px; }
+  .beta-tag { font-size:10px; font-weight:700; background:rgba(255,255,255,.2);
+              padding:2px 8px; border-radius:10px; letter-spacing:.05em; }
+
+  .tab-bar { display:flex; background:#fff; border-bottom:1px solid var(--border); overflow-x:auto; }
+  .tab-btn { flex:1; min-width:64px; padding:11px 4px; font-size:12px; font-weight:500;
+             border:none; background:transparent; cursor:pointer; color:var(--text2);
+             border-bottom:3px solid transparent; white-space:nowrap; }
+  .tab-btn.active { color:var(--teal); border-bottom-color:var(--teal); }
+
+  .page { display:none; padding:12px; max-width:600px; margin:0 auto; }
+  .page.active { display:block; }
+
+  .card { background:var(--card); border-radius:10px; padding:14px; margin-bottom:12px;
+          box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .card-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px;
+                display:flex; align-items:center; justify-content:space-between; }
+  .card-sub { font-size:11px; color:var(--text2); font-weight:400; }
+
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
+  .input-group { display:flex; flex-direction:column; gap:5px; }
+  .input-label { font-size:11px; color:var(--text2); font-weight:500; }
+  .input-field { padding:10px 12px; border:1.5px solid var(--border); border-radius:8px;
+                 font-size:15px; font-family:var(--font); color:var(--text);
+                 background:#fff; -webkit-appearance:none; width:100%; }
+  .input-field:focus { outline:none; border-color:var(--teal); }
+  .input-field.highlight { border-color:var(--teal); background:var(--teal-light); }
+
+  .result-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .result-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px; }
+  .result-box { background:var(--bg); border-radius:8px; padding:10px; text-align:center; }
+  .result-lbl { font-size:10px; color:var(--text2); margin-bottom:4px; line-height:1.3; }
+  .result-val { font-size:22px; font-weight:700; line-height:1; }
+  .result-sub { font-size:10px; color:var(--text2); margin-top:3px; line-height:1.3; }
+
+  .alert { border-radius:8px; padding:10px 12px; font-size:12px; line-height:1.6; margin-top:8px; }
+  .alert-red    { background:var(--red-light);   color:var(--red);   border-left:4px solid var(--red-mid); }
+  .alert-green  { background:var(--green-light); color:var(--green); border-left:4px solid var(--green); }
+  .alert-blue   { background:var(--blue-light);  color:var(--blue);  border-left:4px solid var(--blue); }
+  .alert-amber  { background:var(--amber-light); color:var(--amber); border-left:4px solid var(--amber); }
+  .alert-teal   { background:var(--teal-light);  color:var(--teal);  border-left:4px solid var(--teal); }
+
+  .btn { display:flex; align-items:center; justify-content:center; gap:6px;
+         padding:11px 18px; border-radius:8px; font-size:13px; font-weight:600;
+         cursor:pointer; border:none; font-family:var(--font); width:100%; margin-top:8px; }
+  .btn-primary { background:var(--teal); color:#fff; }
+
+  .divider { height:1px; background:var(--border); margin:12px 0; }
+  .hint { font-size:11px; color:var(--text2); line-height:1.6; }
+
+  .doc-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .doc-display { font-size:22px; font-weight:700; color:var(--teal); min-width:60px; }
+  .doc-slider { flex:1; -webkit-appearance:none; height:6px; border-radius:3px;
+                background:var(--border); outline:none; }
+  .doc-slider::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px;
+    border-radius:50%; background:var(--teal); cursor:pointer;
+    box-shadow:0 1px 4px rgba(0,0,0,.2); }
+  .week-marks { display:flex; justify-content:space-between;
+                font-size:10px; color:var(--text2); margin-top:2px; }
+
+  .ref-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .ref-table th { padding:6px 5px; background:var(--teal); color:#fff;
+                  font-size:10px; text-align:center; position:sticky; top:0; }
+  .ref-table th:first-child { text-align:left; }
+  .ref-table td { padding:5px 5px; border-bottom:1px solid var(--border); text-align:center; }
+  .ref-table td:first-child { text-align:left; font-weight:600; }
+  .ref-table tr:nth-child(even) td { background:#FAFAFA; }
+  .ref-table .week-row td { background:#E0F5F5; font-weight:700; }
+  .table-wrap { overflow-x:auto; border-radius:8px; border:1px solid var(--border); max-height:400px; overflow-y:auto; }
+
+  .step-item { display:flex; gap:10px; margin-bottom:10px; }
+  .step-num { min-width:24px; height:24px; border-radius:50%; display:flex;
+              align-items:center; justify-content:center; font-size:11px;
+              font-weight:700; flex-shrink:0; margin-top:1px; }
+  .step-text { font-size:12px; line-height:1.6; }
+  .formula { background:var(--bg); border:1px solid var(--border); border-radius:8px;
+             padding:10px 12px; font-size:12px; font-weight:600; margin:6px 0;
+             color:var(--teal); line-height:1.6; }
+
+  .big-card { background:var(--card); border-radius:12px; padding:18px 16px; margin-bottom:12px;
+              box-shadow:0 1px 3px rgba(0,0,0,.08); text-align:center; }
+  .big-card .bc-label { font-size:12px; color:var(--text2); font-weight:500; margin-bottom:6px; }
+  .big-card .bc-value { font-size:48px; font-weight:800; line-height:1; letter-spacing:-1px; }
+  .big-card .bc-unit  { font-size:16px; font-weight:600; margin-left:4px; }
+  .big-card .bc-sub   { font-size:12px; color:var(--text2); margin-top:8px; }
+
+  .feed-card { background:var(--card); border-radius:12px; padding:14px 16px; margin-bottom:12px;
+               box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .feed-card .fc-main { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; }
+  .feed-card .fc-rec  { font-size:42px; font-weight:800; color:var(--teal); line-height:1; }
+  .feed-card .fc-unit { font-size:16px; color:var(--teal); font-weight:600; align-self:flex-end; padding-bottom:4px; }
+  .feed-card .fc-label { font-size:12px; color:var(--text2); text-align:center; margin-bottom:8px; }
+  .feed-limit { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .feed-limit-box { background:var(--bg); border-radius:8px; padding:8px; text-align:center; }
+  .feed-limit-box .fl-lbl { font-size:10px; color:var(--text2); margin-bottom:3px; }
+  .feed-limit-box .fl-val { font-size:20px; font-weight:700; }
+
+  .rate-meter { display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .rate-bar-bg { flex:1; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+  .rate-bar-fill { height:100%; border-radius:4px; transition:width .3s; }
+
+  .notice-box { background:var(--teal-light); border-left:4px solid var(--teal);
+                border-radius:0 8px 8px 0; padding:10px 12px;
+                font-size:11px; color:var(--teal); line-height:1.6; margin-top:8px; }
+
+  .feed-code-badge { display:inline-block; background:var(--teal); color:#fff;
+                     font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; }
+
+  .lang-bar { display:flex; justify-content:flex-end; align-items:center; gap:4px;
+              background:var(--teal); padding:4px 16px 8px; }
+  .lang-btn { padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600;
+              border:1.5px solid rgba(255,255,255,.4); background:transparent; color:rgba(255,255,255,.7);
+              cursor:pointer; font-family:var(--font); letter-spacing:.03em; }
+  .lang-btn.active { background:rgba(255,255,255,.25); color:#fff; border-color:rgba(255,255,255,.8); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1 id="hdr-title">🦐 白蝦投餵換算工具</h1>
+      <p>ONE MILLION TON SMART SOLUTION</p>
+    </div>
+    <span class="beta-tag">OMT BETA</span>
+  </div>
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="setLang('zh')">中文</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('id')">ID</button>
+    <button class="lang-btn" onclick="setLang('vi')">VI</button>
+    <button class="lang-btn" onclick="setLang('th')">TH</button>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-calc" onclick="switchTab('calc',this)">🔬 生物量計算</button>
+  <button class="tab-btn" id="tab-table" onclick="switchTab('table',this)">📊 速查表</button>
+  <button class="tab-btn" id="tab-guide" onclick="switchTab('guide',this)">📋 說明</button>
+</div>
+
+<!-- ══ PAGE 1：每日投餵 ══════════════════════════════════════════ -->
+<div id="page-calc" class="page active">
+
+  <div class="card">
+    <div class="card-title"><span id="lbl-settings">基本設定</span> <span class="card-sub" id="lbl-once">每批次填一次</span></div>
+    <div class="row2">
+      <div class="input-group">
+        <label class="input-label" id="lbl-stocked">下苗量（尾）</label>
+        <input class="input-field" id="stocked" type="number" inputmode="numeric" value="100000">
+      </div>
+      <div class="input-group">
+        <label class="input-label" id="lbl-survrate">估計存活率（%）</label>
+        <input class="input-field" id="survRate" type="number" inputmode="numeric" value="80">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="lbl-doc">選擇 DOC（養殖天數）</div>
+    <div class="doc-row">
+      <span class="doc-display" id="docDisplay">DOC 30</span>
+      <input type="range" class="doc-slider" id="docSlider" min="1" max="105" value="30"
+             oninput="document.getElementById('docDisplay').textContent='DOC '+this.value">
+    </div>
+    <div class="week-marks">
+      <span>D1<br><span id="lbl-wm-stock" style="font-size:9px">放苗</span></span>
+      <span>D14<br><span style="font-size:9px">No1</span></span>
+      <span>D28<br><span style="font-size:9px">No2S</span></span>
+      <span>D56<br><span style="font-size:9px">No3</span></span>
+      <span>D80<br><span style="font-size:9px">No4</span></span>
+      <span>D105<br><span id="lbl-wm-harvest" style="font-size:9px">收成</span></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span id="lbl-today">今日數據</span> <span class="card-sub" id="lbl-required">必填</span></div>
+    <div class="row2" style="margin-bottom:10px">
+      <div class="input-group">
+        <label class="input-label" id="lbl-feed">今日實際投料量（kg）</label>
+        <input class="input-field highlight" id="actualKg" type="number" inputmode="decimal"
+               placeholder="例：15">
+      </div>
+      <div class="input-group">
+        <label class="input-label" id="lbl-weight">今日蝦體均重（g）</label>
+        <input class="input-field highlight" id="todayWeight" type="number" inputmode="decimal"
+               placeholder="例：5.5">
+      </div>
+    </div>
+    <div class="input-group" style="margin-bottom:10px">
+      <label class="input-label"><span id="lbl-vol">水體體積（m³）</span><span id="lbl-vol-sub" style="color:var(--text2);font-weight:400"> 選填 · 計算承載密度用</span></label>
+      <input class="input-field" id="pondVol" type="number" inputmode="decimal"
+             placeholder="例：3000">
+    </div>
+    <button type="button" id="btn-calc" class="btn btn-primary" onclick="calcMain()">計算</button>
+  </div>
+
+  <div id="calcResult"></div>
+
+</div>
+
+<!-- ══ PAGE 2：速查表 ══════════════════════════════════════════ -->
+<div id="page-table" class="page">
+  <div class="card">
+    <div class="card-title" id="lbl-table-title">週別投餵速查表</div>
+    <p class="hint" style="margin-bottom:10px">
+      <span id="lbl-table-hint">基準：100,000 尾 · 存活率 100%</span><br>
+      <strong id="lbl-table-hint2">實際投料量 = 表中數值 × 下苗量 × 存活率 ÷ 100,000</strong>
+    </p>
+    <div class="table-wrap">
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th style="text-align:left" id="th-week">週次</th>
+            <th>DOC</th>
+            <th id="th-weight">蝦體(g)</th>
+            <th id="th-daily">日投量<br>(kg/10萬)</th>
+            <th id="th-rate">投餵率</th>
+          </tr>
+        </thead>
+        <tbody id="refTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 4：說明 ══════════════════════════════════════════════ -->
+<div id="page-guide" class="page">
+
+  <div class="card">
+    <div class="card-title" id="lbl-formula">核心公式</div>
+    <div class="formula" id="f1">建議日投量 = 表中日投量(kg/10萬) × 下苗量 × 存活率 ÷ 100,000</div>
+    <div class="formula" id="f2">池中Biomass(kg) = 實際日投量(kg) ÷ 投餵率%</div>
+    <div class="formula" id="f3">推估存活尾數 = Biomass(kg) × 1,000,000 ÷ 蝦體均重(g)</div>
+    <div class="formula" id="f4">推估存活率 = 推估存活尾數 ÷ 下苗量 × 100%</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="lbl-steps">使用步驟</div>
+    <div class="step-item">
+      <div class="step-num" style="background:var(--teal-light);color:var(--teal)">1</div>
+      <div class="step-text" id="s1">「每日投餵」頁：填入下苗量、存活率，拉動 DOC 滑桿，查出今日建議投料量與料號</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num" style="background:var(--teal-light);color:var(--teal)">2</div>
+      <div class="step-text" id="s2">填入今日實際投料量，系統判斷是否符合建議範圍，並提示換料時機</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num" style="background:var(--blue-light);color:var(--blue)">3</div>
+      <div class="step-text" id="s3">「Biomass反推」頁：填入實際投料量與蝦體均重，反推池中生物量與存活尾數</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num" style="background:var(--blue-light);color:var(--blue)">4</div>
+      <div class="step-text" id="s4">連續數日的反推存活率若穩定，即可作為下一批次的估算基礎</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="lbl-warn">⚠ 重要提醒</div>
+    <div class="step-item">
+      <div class="step-num" style="background:var(--red-light);color:var(--red)">!</div>
+      <div class="step-text" id="w1"><strong>飼料盤是關鍵</strong>：每次投餵後按時間檢查盤中殘料，有殘料需減量，吃完太快需增量。</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num" style="background:var(--amber-light);color:var(--amber)">!</div>
+      <div class="step-text" id="w2">換料時（換號碼）建議減少 10–15% 投量，等蝦適應新料後再逐步恢復。</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num" style="background:var(--green-light);color:var(--green)">i</div>
+      <div class="step-text" id="w3">本表為 100,000 尾基準，需依實際下苗量與存活率換算。高密度養殖需注意水質限制。</div>
+    </div>
+    <p class="hint" id="lbl-hint-bottom" style="margin-top:8px">本工具為 OMT Beta 版，數據不支援雲端儲存。如有疑問請聯絡技術服務代表。</p>
+  </div>
+
+</div>
+
+<script>
+// ── 投餵指引數據 (DOC 1–105) ──────────────────────────────────────
+// [feedCode, bodyWeightG, dailyFeedKg_per_100k, feedingTimes, feedingRate]
+const GUIDE = [
+  ['No0/No1', 0.01, 1.0,  '4-6', null],     // DOC 1
+  ['No0/No1', 0.03, 1.5,  '4-6', null],     // DOC 2
+  ['No0/No1', 0.05, 1.5,  '4-6', null],     // DOC 3
+  ['No0/No1', 0.07, 2.0,  '4-6', null],     // DOC 4
+  ['No0/No1', 0.10, 2.0,  '4-6', null],     // DOC 5
+  ['No0/No1', 0.13, 2.5,  '4-6', null],     // DOC 6
+  ['No0/No1', 0.16, 2.5,  '4-6', null],     // DOC 7
+  ['No1',     0.19, 3.0,  '4-6', '10-20%'], // DOC 8
+  ['No1',     0.23, 3.0,  '4-6', '10-20%'], // DOC 9
+  ['No1',     0.27, 3.5,  '4-6', '10-20%'], // DOC 10
+  ['No1',     0.31, 3.5,  '4-6', '10-20%'], // DOC 11
+  ['No1',     0.35, 4.0,  '4-6', '10-20%'], // DOC 12
+  ['No1',     0.39, 4.0,  '4-6', '8-10%'],  // DOC 13
+  ['No1',     0.44, 4.5,  '4-6', '8-10%'],  // DOC 14
+  ['No1',     0.49, 4.5,  '4-6', '8-10%'],  // DOC 15
+  ['No1',     0.55, 5.0,  '4-6', '8-10%'],  // DOC 16
+  ['No1',     0.60, 5.0,  '4-6', '8-10%'],  // DOC 17
+  ['No1',     0.65, 6.5,  '4-6', '8-10%'],  // DOC 18
+  ['No1+No2S',0.70, 7.0,  '4-6', '8-10%'],  // DOC 19
+  ['No1+No2S',0.80, 7.5,  '4-6', '8-10%'],  // DOC 20
+  ['No1+No2S',0.90, 7.5,  '4-6', '8-10%'],  // DOC 21
+  ['No1+No2S',1.00, 8.0,  '4-6', '7-9%'],   // DOC 22
+  ['No.2S',   1.15, 8.5,  '4-6', '7-9%'],   // DOC 23
+  ['No.2S',   1.30, 9.0,  '4-6', '7-9%'],   // DOC 24
+  ['No.2S',   1.45, 10.0, '4-6', '7-9%'],   // DOC 25
+  ['No.2S',   1.60, 11.0, '4-6', '6-8%'],   // DOC 26
+  ['No.2S',   1.80, 12.0, '4-6', '6-8%'],   // DOC 27
+  ['No.2S',   2.00, 13.0, '4-6', '6-8%'],   // DOC 28
+  ['No.2S',   2.20, 14.0, '4-6', '6-8%'],   // DOC 29
+  ['No.2S',   2.40, 15.0, '4-6', '6-8%'],   // DOC 30
+  ['No.2S',   2.60, 16.0, '4',   '6-8%'],   // DOC 31
+  ['No.2S',   2.80, 17.0, '4',   '6-8%'],   // DOC 32
+  ['No.2S',   3.00, 18.0, '4',   '5-7%'],   // DOC 33
+  ['No2S+No2',3.30, 19.0, '4',   '5-7%'],   // DOC 34
+  ['No2S+No2',3.60, 20.0, '4',   '5-7%'],   // DOC 35
+  ['No2S+No2',3.90, 21.0, '4',   '5-7%'],   // DOC 36
+  ['No2S+No2',4.20, 22.0, '4',   '5-7%'],   // DOC 37
+  ['No2S+No2',4.50, 23.0, '4',   '5-7%'],   // DOC 38
+  ['No.2',    4.80, 25.0, '4',   '5-7%'],   // DOC 39
+  ['No.2',    5.10, 26.0, '4',   '4-6%'],   // DOC 40
+  ['No.2',    5.40, 27.0, '4',   '4-6%'],   // DOC 41
+  ['No.2',    5.70, 28.0, '4',   '4-6%'],   // DOC 42
+  ['No.2',    6.00, 29.0, '4',   '4-6%'],   // DOC 43
+  ['No.2',    6.35, 30.0, '4',   '4-6%'],   // DOC 44
+  ['No.2',    6.70, 31.0, '4',   '4-6%'],   // DOC 45
+  ['No.2',    7.05, 32.0, '4',   '4-6%'],   // DOC 46
+  ['No.2',    7.40, 33.0, '4',   '4-6%'],   // DOC 47
+  ['No.2',    7.75, 34.0, '4',   '4-6%'],   // DOC 48
+  ['No.2',    8.10, 35.0, '4',   '4-6%'],   // DOC 49
+  ['No.2',    8.45, 36.0, '4',   '4-6%'],   // DOC 50
+  ['No.2',    8.80, 37.0, '4',   '4-6%'],   // DOC 51
+  ['No2+No3', 9.15, 38.0, '4',   '4-6%'],   // DOC 52
+  ['No2+No3', 9.50, 39.0, '4',   '4-6%'],   // DOC 53
+  ['No2+No3', 9.85, 40.0, '4',   '3-5%'],   // DOC 54
+  ['No2+No3',10.20, 41.0, '4',   '3-5%'],   // DOC 55
+  ['No.3',   10.60, 42.0, '4',   '3-5%'],   // DOC 56
+  ['No.3',   11.00, 43.0, '4',   '3-5%'],   // DOC 57
+  ['No.3',   11.40, 44.0, '4',   '3-5%'],   // DOC 58
+  ['No.3',   11.80, 45.0, '4',   '3-5%'],   // DOC 59
+  ['No.3',   12.20, 46.0, '4',   '3-5%'],   // DOC 60
+  ['No.3',   12.60, 47.0, '4',   '3-5%'],   // DOC 61
+  ['No.3',   13.00, 48.0, '4',   '3-5%'],   // DOC 62
+  ['No.3',   13.40, 49.0, '4',   '3-5%'],   // DOC 63
+  ['No.3',   13.80, 50.0, '4',   '3-5%'],   // DOC 64
+  ['No.3',   14.20, 51.0, '4',   '3-5%'],   // DOC 65
+  ['No.3',   14.60, 52.0, '4',   '3-5%'],   // DOC 66
+  ['No.3',   15.00, 53.0, '4',   '3-5%'],   // DOC 67
+  ['No.3',   15.40, 54.0, '4',   '3-4%'],   // DOC 68
+  ['No.3',   15.80, 55.0, '4',   '3-4%'],   // DOC 69
+  ['No.3',   16.20, 56.0, '4',   '3-4%'],   // DOC 70
+  ['No.3',   16.60, 57.0, '4',   '3-4%'],   // DOC 71
+  ['No.3',   17.00, 58.0, '4',   '3-4%'],   // DOC 72
+  ['No.3',   17.40, 59.0, '4',   '3-4%'],   // DOC 73
+  ['No.3',   17.80, 60.0, '4',   '3-4%'],   // DOC 74
+  ['No.3',   18.20, 60.0, '4',   '3-4%'],   // DOC 75
+  ['No3+No4',18.60, 61.0, '4',   '3-4%'],   // DOC 76
+  ['No3+No4',19.00, 61.0, '4',   '3-4%'],   // DOC 77
+  ['No3+No4',19.40, 62.0, '4',   '3-4%'],   // DOC 78
+  ['No3+No4',19.80, 62.0, '4',   '3-4%'],   // DOC 79
+  ['No3+No4',20.20, 63.0, '4',   '2-3%'],   // DOC 80
+  ['No.4',   20.60, 63.0, '4',   '2-3%'],   // DOC 81
+  ['No.4',   21.00, 64.0, '4',   '2-3%'],   // DOC 82
+  ['No.4',   21.40, 64.0, '4',   '2-3%'],   // DOC 83
+  ['No.4',   21.80, 65.0, '4',   '2-3%'],   // DOC 84
+  ['No.4',   22.20, 65.0, '4',   '2-3%'],   // DOC 85
+  ['No.4',   22.60, 66.0, '4',   '2-3%'],   // DOC 86
+  ['No.4',   23.00, 66.0, '4',   '2-3%'],   // DOC 87
+  ['No.4',   23.40, 67.0, '4',   '2-3%'],   // DOC 88
+  ['No.4',   23.80, 67.0, '4',   '2-3%'],   // DOC 89
+  ['No.4',   24.20, 68.0, '4',   '2-3%'],   // DOC 90
+  ['No.4',   24.60, 68.0, '4',   '2-3%'],   // DOC 91
+  ['No.4',   25.00, 69.0, '4',   '2-3%'],   // DOC 92
+  ['No.4',   25.40, 69.0, '4',   '2-3%'],   // DOC 93
+  ['No.4',   25.80, 70.0, '4',   '2-3%'],   // DOC 94
+  ['No.4',   26.20, 70.0, '4',   '2-3%'],   // DOC 95
+  ['No.4',   26.60, 71.0, '4',   '2-3%'],   // DOC 96
+  ['No.4',   27.00, 71.0, '4',   '2-3%'],   // DOC 97
+  ['No.4',   27.40, 72.0, '4',   '2-3%'],   // DOC 98
+  ['No.4',   27.80, 72.0, '4',   '2-3%'],   // DOC 99
+  ['No.4',   28.20, 73.0, '4',   '2-3%'],   // DOC 100
+  ['No.4',   28.60, 73.0, '4',   '2-3%'],   // DOC 101
+  ['No.4',   29.00, 74.0, '4',   '2-3%'],   // DOC 102
+  ['No.4',   29.40, 74.0, '4',   '2-3%'],   // DOC 103
+  ['No.4',   29.80, 75.0, '4',   '2-3%'],   // DOC 104
+  ['No.4',   30.20, 75.0, '4',   '2-3%'],   // DOC 105
+];
+
+// Biomass 投餵率 (% BW/day) — v3 合併校正 2026-06
+// 三方平均：建議表 + 客戶數據(SVA回歸) + 研究文獻回歸
+// 逐克查表插值，完整對應合併曲線
+const FR_TABLE = [
+  [1, 8.00], [2, 7.00],
+  [3, 6.98], [4, 6.08], [5, 5.55],
+  [6, 5.11], [7, 4.75], [8, 4.47], [9, 4.23],
+  [10, 4.04], [11, 3.87], [12, 3.72], [13, 3.59],
+  [14, 3.47], [15, 3.37], [16, 3.28], [17, 3.20], [18, 3.11],
+  [19, 3.02], [20, 2.94], [21, 2.87], [22, 2.79],
+  [23, 2.72], [24, 2.67], [25, 2.61],
+  [26, 2.56], [27, 2.51], [28, 2.46], [29, 2.42], [30, 2.38],
+];
+
+function getBiomassRate(weightG) {
+  if (weightG <= FR_TABLE[0][0]) return FR_TABLE[0][1];
+  if (weightG >= FR_TABLE[FR_TABLE.length-1][0]) return FR_TABLE[FR_TABLE.length-1][1];
+  for (let i = 0; i < FR_TABLE.length - 1; i++) {
+    const [w0, r0] = FR_TABLE[i];
+    const [w1, r1] = FR_TABLE[i+1];
+    if (weightG >= w0 && weightG <= w1) {
+      const t = (weightG - w0) / (w1 - w0);
+      return r0 + t * (r1 - r0);
+    }
+  }
+}
+
+// 換料節點提示
+const FEED_CHANGE = {19:'換No2S料', 28:'換No2料', 56:'換No3料', 80:'換No4料'};
+
+// 依蝦體重查詢最接近的 GUIDE 建議日投量
+function getGuideByWeight(weightG) {
+  let best = 0, bestDiff = Infinity;
+  for (let i = 0; i < GUIDE.length; i++) {
+    const diff = Math.abs(GUIDE[i][1] - weightG);
+    if (diff < bestDiff) { bestDiff = diff; best = i; }
+  }
+  return { idx: best, entry: GUIDE[best] };
+}
+
+// ── 頁面切換 ─────────────────────────────────────────────────────
+function switchTab(t, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + t).classList.add('active');
+}
+
+// ── 生物量計算 ───────────────────────────────────────────────────
+function calcMain() {
+  const actualKg = +document.getElementById('actualKg').value    || 0;
+  const todayW   = +document.getElementById('todayWeight').value || 0;
+
+  // 必填未填 → 清空結果，什麼都不顯示
+  if (!actualKg || !todayW) {
+    document.getElementById('calcResult').innerHTML = '';
+    return;
+  }
+
+  const stocked  = +document.getElementById('stocked').value   || 100000;
+  const survPct  = +document.getElementById('survRate').value  || 80;
+  const doc      = +document.getElementById('docSlider').value || 1;
+  const pondVol  = +document.getElementById('pondVol').value   || 0;
+  const gDoc     = GUIDE[doc - 1];  // DOC 表（只用於生長比對）
+
+  // ── 主計算：今日投餌量 ÷ 該體型投餵率 = Biomass
+  const feedRate   = getBiomassRate(todayW);
+  const biomassKg  = actualKg / (feedRate / 100);
+  const estCount   = biomassKg * 1000 / todayW;
+  const estSurvPct = estCount / stocked * 100;
+
+  // ── 建議日投量：依今日實際蝦體重查表，以預設活存率換算
+  const { entry: gW } = getGuideByWeight(todayW);
+  const recDailyKg    = gW[2] * stocked * (survPct / 100) / 100000;
+  const minDailyKg  = recDailyKg * 0.85;
+  const maxDailyKg  = recDailyKg * 1.15;
+
+  const T = LANG[currentLang];
+
+  // ── 活存率顏色
+  const survDiff  = estSurvPct - survPct;
+  const survDiffStr = survDiff >= 0 ? `+${survDiff.toFixed(0)}%` : `${survDiff.toFixed(0)}%`;
+  const survColor = Math.abs(survDiff) <= 8 ? 'var(--green)' : survDiff > 0 ? 'var(--amber)' : 'var(--red)';
+
+  // ── 生長狀況：±1週體重 range
+  const lowIdx  = Math.max(0, doc - 8);
+  const highIdx = Math.min(104, doc + 6);
+  const lowW    = GUIDE[lowIdx][1];
+  const highW   = GUIDE[highIdx][1];
+  let growthColor, growthIcon, growthTitle, growthMsg;
+  if (todayW > highW) {
+    growthColor = 'var(--green)';
+    growthIcon  = '🌟';
+    growthTitle = T.r_ahead_title;
+    growthMsg   = T.r_ahead_msg(todayW, highW);
+  } else if (todayW < lowW) {
+    growthColor = 'var(--amber)';
+    growthIcon  = '⚠';
+    growthTitle = T.r_slow_title;
+    growthMsg   = T.r_slow_msg(todayW, lowW);
+  } else {
+    growthColor = 'var(--teal)';
+    growthIcon  = '✓';
+    growthTitle = T.r_normal_title;
+    growthMsg   = T.r_normal_msg(todayW, lowW, highW, doc, gDoc[1]);
+  }
+
+  // ── 投料量狀態
+  let feedAlert = '';
+  if (actualKg > maxDailyKg) {
+    feedAlert = `<div class="alert alert-red" style="margin-top:6px">${T.a_over(actualKg, maxDailyKg.toFixed(1))}</div>`;
+  } else if (actualKg < minDailyKg) {
+    feedAlert = `<div class="alert alert-amber" style="margin-top:6px">${T.a_under(actualKg, minDailyKg.toFixed(1))}</div>`;
+  } else {
+    feedAlert = `<div class="alert alert-green" style="margin-top:6px">${T.a_ok(actualKg, minDailyKg.toFixed(1), maxDailyKg.toFixed(1))}</div>`;
+  }
+
+  let html = `
+    <div class="big-card">
+      <div class="bc-label">${T.r_biomass}</div>
+      <div class="bc-value" style="color:var(--teal)">${biomassKg.toFixed(1)}<span class="bc-unit">kg</span></div>
+      <div class="bc-sub">${actualKg}kg ÷ ${feedRate.toFixed(2)}% FR (ABW ${todayW}g)</div>
+    </div>
+
+    <div class="big-card">
+      <div class="bc-label">${T.r_count}</div>
+      <div class="bc-value" style="color:var(--blue)">${(estCount/10000).toFixed(1)}<span class="bc-unit">${T.r_unit_wan}</span></div>
+      <div class="bc-sub">${biomassKg.toFixed(1)}kg × 1000 ÷ ${todayW}g = ${Math.round(estCount).toLocaleString()} ${T.r_unit_tail}</div>
+    </div>
+
+    <div class="big-card">
+      <div class="bc-label">${T.r_surv} <span style="font-size:10px;color:var(--text2)">（${T.r_surv_base} ${survPct}%）</span></div>
+      <div class="bc-value" style="color:${survColor}">${estSurvPct.toFixed(1)}<span class="bc-unit">%</span></div>
+      <div class="bc-sub">${T.r_surv_diff} ${survDiffStr} · ${(stocked/10000).toFixed(1)}${T.r_unit_wan} ${T.r_stock_base}</div>
+    </div>
+
+    ${pondVol > 0 ? `
+    <div class="big-card">
+      <div class="bc-label">${T.r_density}</div>
+      <div class="bc-value" style="color:var(--blue-mid)">${(biomassKg/pondVol).toFixed(2)}<span class="bc-unit">kg/m³</span></div>
+      <div class="bc-sub">${biomassKg.toFixed(1)}kg ÷ ${pondVol.toLocaleString()}m³ · ${(biomassKg/pondVol)<3?T.r_density_ok:T.r_density_hi}</div>
+    </div>` : ''}
+
+    <div class="big-card" style="border-left:4px solid ${growthColor}">
+      <div class="bc-label">${T.r_growth} <span style="font-size:10px;color:var(--text2)">DOC ${doc} ${T.r_growth_range} ${lowW}–${highW}g</span></div>
+      <div class="bc-value" style="color:${growthColor};font-size:34px">${growthIcon} ${todayW}g</div>
+      <div style="font-size:13px;font-weight:700;color:${growthColor};margin-top:6px">${growthTitle}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.7;text-align:left">${growthMsg}</div>
+    </div>
+
+    <div class="feed-card">
+      <div class="fc-label">${T.r_rec(todayW, survPct)}</div>
+      <div class="fc-main">
+        <span class="fc-rec">${recDailyKg.toFixed(1)}</span>
+        <span class="fc-unit">kg</span>
+      </div>
+      <div class="feed-limit">
+        <div class="feed-limit-box">
+          <div class="fl-lbl">${T.r_min}</div>
+          <div class="fl-val" style="color:var(--amber)">${minDailyKg.toFixed(1)}<span style="font-size:13px"> kg</span></div>
+        </div>
+        <div class="feed-limit-box">
+          <div class="fl-lbl">${T.r_max}</div>
+          <div class="fl-val" style="color:var(--red)">${maxDailyKg.toFixed(1)}<span style="font-size:13px"> kg</span></div>
+        </div>
+      </div>
+    </div>
+    ${feedAlert}`;
+
+  if (FEED_CHANGE[doc]) {
+    html += `<div class="alert alert-amber" style="margin-top:6px">
+      ${T.a_feed_change(doc, FEED_CHANGE[doc], (recDailyKg*0.88).toFixed(1))}
+    </div>`;
+  }
+
+  document.getElementById('calcResult').innerHTML = html;
+}
+
+// ── 速查表（週別）────────────────────────────────────────────────
+function roundTo5(n) { return Math.round(n / 5) * 5; }
+
+function parseRateRange(rows) {
+  let rMin = Infinity, rMax = -Infinity;
+  rows.forEach(r => {
+    if (!r[4]) return;
+    const m = r[4].match(/(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)/);
+    if (m) { rMin = Math.min(rMin, +m[1]); rMax = Math.max(rMax, +m[2]); }
+  });
+  if (rMin === Infinity) return '—';
+  return rMin === rMax ? `${rMin}%` : `${rMin}–${rMax}%`;
+}
+
+(function buildRef() {
+  const tbody = document.getElementById('refTbody');
+
+  for (let w = 1; w <= 15; w++) {
+    const startIdx = (w - 1) * 7;
+    const endIdx   = Math.min(startIdx + 6, 104);
+    const rows     = GUIDE.slice(startIdx, endIdx + 1);
+
+    const minW    = rows[0][1].toFixed(1);
+    const maxW    = rows[rows.length - 1][1].toFixed(1);
+    const minFd   = Math.round(rows[0][2]);
+    const maxFd   = Math.floor(rows[rows.length - 1][2] * 1.25);  // 表格上限 ×1.25
+    const rateStr = parseRateRange(rows);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:700;color:var(--teal)">W${w}</td>
+      <td style="font-size:10px;color:var(--text2)">D${startIdx+1}–${endIdx+1}</td>
+      <td>${minW === maxW ? minW : minW + '–' + maxW}g</td>
+      <td><strong>${minFd}</strong> – <strong style="color:var(--red)">${maxFd}</strong></td>
+      <td style="font-size:10px;color:var(--text2)">${rateStr}</td>`;
+    tbody.appendChild(tr);
+  }
+})();
+
+// ── 多語系 ───────────────────────────────────────────────────────
+let currentLang = 'zh';
+
+const LANG = {
+zh: {
+  title:'🦐 白蝦投餵換算工具',
+  tab_calc:'🔬 生物量計算', tab_table:'📊 速查表', tab_guide:'📋 說明',
+  card_settings:'基本設定', sub_once:'每批次填一次',
+  label_stocked:'下苗量（尾）', label_survrate:'估計存活率（%）',
+  card_doc:'選擇 DOC（養殖天數）',
+  card_today:'今日數據', sub_required:'必填',
+  label_feed:'今日實際投料量（kg）', label_weight:'今日蝦體均重（g）',
+  label_vol:'水體體積（m³）', label_vol_sub:'選填 · 計算承載密度用',
+  ph_feed:'例：15', ph_weight:'例：5.5', ph_vol:'例：3000',
+  btn_calc:'計算',
+  wm_stock:'放苗', wm_harvest:'收成',
+  table_title:'週別投餵速查表',
+  table_hint:'基準：100,000 尾 · 存活率 100%',
+  table_hint2:'實際投料量 = 表中數值 × 下苗量 × 存活率 ÷ 100,000',
+  th_week:'週次', th_doc:'DOC', th_weight:'蝦體(g)', th_daily:'日投量<br>(kg/10萬)', th_rate:'投餵率',
+  guide_formula:'核心公式', guide_steps:'使用步驟', guide_warn:'⚠ 重要提醒',
+  f1:'建議日投量 = 表中日投量(kg/10萬) × 下苗量 × 存活率 ÷ 100,000',
+  f2:'池中Biomass(kg) = 實際日投量(kg) ÷ 投餵率%',
+  f3:'推估存活尾數 = Biomass(kg) × 1,000,000 ÷ 蝦體均重(g)',
+  f4:'推估存活率 = 推估存活尾數 ÷ 下苗量 × 100%',
+  s1:'「每日投餵」頁：填入下苗量、存活率，拉動 DOC 滑桿，查出今日建議投料量與料號',
+  s2:'填入今日實際投料量，系統判斷是否符合建議範圍，並提示換料時機',
+  s3:'「Biomass反推」頁：填入實際投料量與蝦體均重，反推池中生物量與存活尾數',
+  s4:'連續數日的反推存活率若穩定，即可作為下一批次的估算基礎',
+  w1:'<strong>飼料盤是關鍵</strong>：每次投餵後按時間檢查盤中殘料，有殘料需減量，吃完太快需增量。',
+  w2:'換料時（換號碼）建議減少 10–15% 投量，等蝦適應新料後再逐步恢復。',
+  w3:'本表為 100,000 尾基準，需依實際下苗量與存活率換算。高密度養殖需注意水質限制。',
+  hint_bottom:'本工具為 OMT Beta 版，數據不支援雲端儲存。如有疑問請聯絡技術服務代表。',
+  r_biomass:'池中生物量（Biomass）', r_count:'預估蝦總量',
+  r_unit_wan:'萬尾', r_unit_tail:'尾',
+  r_surv:'活存率推算', r_surv_base:'校正：預設', r_surv_diff:'與預設相差', r_stock_base:'下苗基準',
+  r_density:'生物承載密度', r_density_ok:'✓ 密度正常', r_density_hi:'⚠ 密度偏高，注意溶氧',
+  r_growth:'生長狀況', r_growth_range:'正常範圍',
+  r_ahead_title:'生長超前！',
+  r_ahead_msg:(w,hw)=>`均重 ${w}g，超過一週後預期（${hw}g），生長表現優秀。<br>提醒：確認採樣代表性，避免只抓大尾蝦而高估均重。`,
+  r_slow_title:'生長稍慢，請留意',
+  r_slow_msg:(w,lw)=>`均重 ${w}g，低於一週前預期（${lw}g），速度稍慢。<br>請確認：① 水質（DO、pH、氨氮）　② 飼料盤攝食狀況　③ 是否有疾病或異常死亡。`,
+  r_normal_title:'生長正常',
+  r_normal_msg:(w,lw,hw,doc,gw)=>`均重 ${w}g，在正常範圍（${lw}–${hw}g）內，符合 DOC ${doc} 預期（${gw}g）。`,
+  r_rec:(w,sr)=>`建議日投量（蝦體 ${w}g 查表）<span style="color:var(--text2);font-weight:400"> · 活存率 ${sr}%</span>`,
+  r_min:'下限', r_max:'上限',
+  a_over:(a,m)=>`🚫 今日投料 ${a}kg 超過上限（${m}kg）。確認飼料盤殘料，或調高活存率重算。`,
+  a_under:(a,m)=>`⚠ 今日投料 ${a}kg 低於下限（${m}kg）。確認水質、換料過渡或存活率變化。`,
+  a_ok:(a,mn,mx)=>`✓ 今日投料 ${a}kg 符合建議範圍（${mn}–${mx}kg）。`,
+  a_feed_change:(doc,name,kg)=>`⚡ <strong>DOC ${doc}：${name}節點</strong>，建議降 10–15%（約 ${kg}kg）等蝦適應新料。`,
+},
+en: {
+  title:'🦐 Vannamei Feeding Tool',
+  tab_calc:'🔬 Biomass Calc', tab_table:'📊 Quick Ref', tab_guide:'📋 Guide',
+  card_settings:'Basic Settings', sub_once:'Fill once per batch',
+  label_stocked:'Stocked (pcs)', label_survrate:'Est. Survival Rate (%)',
+  card_doc:'Select DOC (Days of Culture)',
+  card_today:"Today's Data", sub_required:'Required',
+  label_feed:'Actual feed today (kg)', label_weight:'Avg shrimp weight today (g)',
+  label_vol:'Water volume (m³)', label_vol_sub:'Optional · for stocking density',
+  ph_feed:'e.g. 15', ph_weight:'e.g. 5.5', ph_vol:'e.g. 3000',
+  btn_calc:'Calculate',
+  wm_stock:'Stock', wm_harvest:'Harvest',
+  table_title:'Weekly Feed Reference Table',
+  table_hint:'Base: 100,000 pcs · SR 100%',
+  table_hint2:'Actual feed = Table value × Stocked × SR ÷ 100,000',
+  th_week:'Week', th_doc:'DOC', th_weight:'ABW(g)', th_daily:'Daily feed<br>(kg/100k)', th_rate:'Feed Rate',
+  guide_formula:'Core Formulas', guide_steps:'How to Use', guide_warn:'⚠ Important Notes',
+  f1:'Rec. daily feed = Table value (kg/100k) × Stocked × SR ÷ 100,000',
+  f2:'Biomass (kg) = Actual daily feed (kg) ÷ Feed rate%',
+  f3:'Est. count = Biomass (kg) × 1,000,000 ÷ ABW (g)',
+  f4:'Est. SR = Est. count ÷ Stocked × 100%',
+  s1:'Biomass Calc tab: enter stocked count and SR, drag DOC slider to see recommended feed and feed grade',
+  s2:'Enter actual feed — system checks if within recommended range and flags feed transitions',
+  s3:'Enter actual feed and ABW to back-calculate biomass and estimated shrimp count',
+  s4:'Stable back-calculated SR over several days can be used as baseline for the next batch',
+  w1:'<strong>Feed trays are critical</strong>: check at each feeding; reduce if leftover, increase if eaten too quickly.',
+  w2:'When switching feed grades, reduce by 10–15% until shrimp adapt, then restore gradually.',
+  w3:'Table based on 100,000 pcs. Adjust for actual stocked count and SR. Monitor water quality at high density.',
+  hint_bottom:'OMT Beta. Data is not cloud-synced. Contact your OMT representative for support.',
+  r_biomass:'Pond Biomass', r_count:'Est. Shrimp Count',
+  r_unit_wan:'×10k pcs', r_unit_tail:'pcs',
+  r_surv:'Est. Survival Rate', r_surv_base:'baseline', r_surv_diff:'vs baseline', r_stock_base:'stocked base',
+  r_density:'Stocking Density', r_density_ok:'✓ Normal density', r_density_hi:'⚠ High density — monitor DO',
+  r_growth:'Growth Status', r_growth_range:'Normal range',
+  r_ahead_title:'Ahead of schedule!',
+  r_ahead_msg:(w,hw)=>`ABW ${w}g exceeds next-week target (${hw}g) — excellent growth.<br>Note: verify sampling is representative; avoid selecting only large shrimp.`,
+  r_slow_title:'Growth slightly slow',
+  r_slow_msg:(w,lw)=>`ABW ${w}g is below last-week expectation (${lw}g).<br>Check: ① Water quality (DO, pH, ammonia) ② Feed tray uptake ③ Abnormal mortality`,
+  r_normal_title:'Growth normal',
+  r_normal_msg:(w,lw,hw,doc,gw)=>`ABW ${w}g is within normal range (${lw}–${hw}g), consistent with DOC ${doc} target (${gw}g).`,
+  r_rec:(w,sr)=>`Rec. daily feed (ABW ${w}g lookup)<span style="color:var(--text2);font-weight:400"> · SR ${sr}%</span>`,
+  r_min:'Min', r_max:'Max',
+  a_over:(a,m)=>`🚫 Today's feed ${a}kg exceeds upper limit (${m}kg). Check tray residue or raise SR estimate.`,
+  a_under:(a,m)=>`⚠ Today's feed ${a}kg is below lower limit (${m}kg). Check water quality, feed transition, or SR change.`,
+  a_ok:(a,mn,mx)=>`✓ Today's feed ${a}kg is within recommended range (${mn}–${mx}kg).`,
+  a_feed_change:(doc,name,kg)=>`⚡ <strong>DOC ${doc}: ${name} transition</strong> — reduce 10–15% (approx. ${kg}kg) while shrimp adapt.`,
+},
+id: {
+  title:'🦐 Kalkulator Pakan Udang Vaname',
+  tab_calc:'🔬 Kalkulasi Biomassa', tab_table:'📊 Tabel Referensi', tab_guide:'📋 Panduan',
+  card_settings:'Pengaturan Dasar', sub_once:'Isi sekali per siklus',
+  label_stocked:'Jumlah Benur (ekor)', label_survrate:'Estimasi SR (%)',
+  card_doc:'Pilih DOC (Hari Budidaya)',
+  card_today:'Data Hari Ini', sub_required:'Wajib',
+  label_feed:'Pakan aktual hari ini (kg)', label_weight:'ABW udang hari ini (g)',
+  label_vol:'Volume air (m³)', label_vol_sub:'Opsional · untuk menghitung kepadatan',
+  ph_feed:'cth: 15', ph_weight:'cth: 5.5', ph_vol:'cth: 3000',
+  btn_calc:'Hitung',
+  wm_stock:'Tebar', wm_harvest:'Panen',
+  table_title:'Tabel Referensi Pakan Mingguan',
+  table_hint:'Basis: 100.000 ekor · SR 100%',
+  table_hint2:'Pakan aktual = Nilai tabel × Benur × SR ÷ 100.000',
+  th_week:'Minggu', th_doc:'DOC', th_weight:'ABW(g)', th_daily:'Pakan Harian<br>(kg/100rb)', th_rate:'FR%',
+  guide_formula:'Rumus Utama', guide_steps:'Cara Penggunaan', guide_warn:'⚠ Catatan Penting',
+  f1:'Pakan rekomendasi = Nilai tabel (kg/100rb) × Benur × SR ÷ 100.000',
+  f2:'Biomassa (kg) = Pakan aktual (kg) ÷ FR%',
+  f3:'Estimasi populasi = Biomassa (kg) × 1.000.000 ÷ ABW (g)',
+  f4:'Estimasi SR = Estimasi populasi ÷ Benur × 100%',
+  s1:'Tab Biomassa: masukkan jumlah benur, SR, dan geser slider DOC untuk rekomendasi pakan',
+  s2:'Masukkan pakan aktual — sistem memeriksa apakah dalam rentang yang direkomendasikan',
+  s3:'Masukkan pakan aktual dan ABW untuk menghitung balik biomassa dan populasi',
+  s4:'SR yang stabil beberapa hari berturut-turut bisa dijadikan dasar estimasi siklus berikutnya',
+  w1:'<strong>Anco/feeding tray sangat penting</strong>: periksa setiap pemberian pakan; kurangi jika ada sisa, tambah jika habis terlalu cepat.',
+  w2:'Saat ganti nomor pakan, kurangi 10–15% hingga udang beradaptasi, lalu naikkan bertahap.',
+  w3:'Tabel berbasis 100.000 ekor. Sesuaikan dengan jumlah benur dan SR aktual. Pantau kualitas air pada kepadatan tinggi.',
+  hint_bottom:'OMT Beta. Data tidak tersinkronisasi ke cloud. Hubungi perwakilan OMT untuk bantuan.',
+  r_biomass:'Biomassa Kolam', r_count:'Estimasi Populasi Udang',
+  r_unit_wan:'×10rb ekor', r_unit_tail:'ekor',
+  r_surv:'Estimasi SR', r_surv_base:'SR target', r_surv_diff:'vs target', r_stock_base:'basis tebar',
+  r_density:'Kepadatan Biomassa', r_density_ok:'✓ Kepadatan normal', r_density_hi:'⚠ Kepadatan tinggi — pantau DO',
+  r_growth:'Status Pertumbuhan', r_growth_range:'Rentang normal',
+  r_ahead_title:'Pertumbuhan lebih cepat!',
+  r_ahead_msg:(w,hw)=>`ABW ${w}g melebihi ekspektasi minggu depan (${hw}g) — pertumbuhan sangat baik.<br>Catatan: pastikan sampling representatif, hindari hanya mengambil udang besar.`,
+  r_slow_title:'Pertumbuhan sedikit lambat',
+  r_slow_msg:(w,lw)=>`ABW ${w}g di bawah ekspektasi minggu lalu (${lw}g).<br>Periksa: ① Kualitas air (DO, pH, amonia) ② Penerimaan pakan di anco ③ Kematian abnormal`,
+  r_normal_title:'Pertumbuhan normal',
+  r_normal_msg:(w,lw,hw,doc,gw)=>`ABW ${w}g dalam rentang normal (${lw}–${hw}g), sesuai target DOC ${doc} (${gw}g).`,
+  r_rec:(w,sr)=>`Rekomendasi pakan harian (ABW ${w}g)<span style="color:var(--text2);font-weight:400"> · SR ${sr}%</span>`,
+  r_min:'Min', r_max:'Max',
+  a_over:(a,m)=>`🚫 Pakan hari ini ${a}kg melebihi batas atas (${m}kg). Periksa sisa di anco atau naikkan estimasi SR.`,
+  a_under:(a,m)=>`⚠ Pakan hari ini ${a}kg di bawah batas bawah (${m}kg). Periksa kualitas air, transisi pakan, atau perubahan SR.`,
+  a_ok:(a,mn,mx)=>`✓ Pakan hari ini ${a}kg dalam rentang yang direkomendasikan (${mn}–${mx}kg).`,
+  a_feed_change:(doc,name,kg)=>`⚡ <strong>DOC ${doc}: pergantian ${name}</strong> — kurangi 10–15% (sekitar ${kg}kg) sampai udang beradaptasi.`,
+},
+vi: {
+  title:'🦐 Công cụ tính lượng thức ăn tôm thẻ',
+  tab_calc:'🔬 Tính sinh khối', tab_table:'📊 Bảng tra cứu', tab_guide:'📋 Hướng dẫn',
+  card_settings:'Cài đặt cơ bản', sub_once:'Điền một lần mỗi vụ',
+  label_stocked:'Số giống thả (con)', label_survrate:'Tỷ lệ sống ước tính (%)',
+  card_doc:'Chọn DOC (ngày nuôi)',
+  card_today:'Dữ liệu hôm nay', sub_required:'Bắt buộc',
+  label_feed:'Lượng thức ăn thực tế hôm nay (kg)', label_weight:'Trọng lượng trung bình hôm nay (g)',
+  label_vol:'Thể tích nước (m³)', label_vol_sub:'Tùy chọn · tính mật độ sinh khối',
+  ph_feed:'VD: 15', ph_weight:'VD: 5.5', ph_vol:'VD: 3000',
+  btn_calc:'Tính toán',
+  wm_stock:'Thả giống', wm_harvest:'Thu hoạch',
+  table_title:'Bảng tra cứu thức ăn theo tuần',
+  table_hint:'Cơ sở: 100.000 con · SR 100%',
+  table_hint2:'Lượng TĂ thực tế = Giá trị bảng × Số giống × SR ÷ 100.000',
+  th_week:'Tuần', th_doc:'DOC', th_weight:'TL TB(g)', th_daily:'TĂ ngày<br>(kg/100k)', th_rate:'Tỷ lệ ăn',
+  guide_formula:'Công thức cốt lõi', guide_steps:'Cách sử dụng', guide_warn:'⚠ Lưu ý quan trọng',
+  f1:'TĂ khuyến nghị = Giá trị bảng (kg/100k) × Số giống × SR ÷ 100.000',
+  f2:'Sinh khối (kg) = TĂ thực tế (kg) ÷ Tỷ lệ cho ăn%',
+  f3:'Số lượng ước tính = Sinh khối (kg) × 1.000.000 ÷ TL trung bình (g)',
+  f4:'SR ước tính = Số lượng ước tính ÷ Số giống × 100%',
+  s1:'Tab Tính sinh khối: nhập số giống, SR và kéo thanh DOC để xem lượng thức ăn khuyến nghị',
+  s2:'Nhập lượng thức ăn thực tế — hệ thống kiểm tra xem có nằm trong phạm vi khuyến nghị không',
+  s3:'Nhập TĂ thực tế và trọng lượng trung bình để tính ngược sinh khối và số lượng tôm',
+  s4:'SR tính ngược ổn định trong nhiều ngày có thể dùng làm cơ sở ước tính vụ tiếp theo',
+  w1:'<strong>Sàng ăn là quan trọng nhất</strong>: kiểm tra sau mỗi lần cho ăn; giảm nếu còn thừa, tăng nếu hết quá nhanh.',
+  w2:'Khi đổi số thức ăn, giảm 10–15% cho đến khi tôm thích nghi, sau đó tăng dần.',
+  w3:'Bảng dựa trên 100.000 con. Điều chỉnh theo số giống và SR thực tế. Theo dõi chất lượng nước ở mật độ cao.',
+  hint_bottom:'OMT Beta. Dữ liệu không được lưu trên đám mây. Liên hệ đại diện OMT để được hỗ trợ.',
+  r_biomass:'Sinh khối ao', r_count:'Số lượng tôm ước tính',
+  r_unit_wan:'×10k con', r_unit_tail:'con',
+  r_surv:'SR ước tính', r_surv_base:'cơ sở', r_surv_diff:'so với cơ sở', r_stock_base:'cơ sở thả',
+  r_density:'Mật độ sinh khối', r_density_ok:'✓ Mật độ bình thường', r_density_hi:'⚠ Mật độ cao — theo dõi DO',
+  r_growth:'Tình trạng tăng trưởng', r_growth_range:'Phạm vi bình thường',
+  r_ahead_title:'Tăng trưởng vượt tiến độ!',
+  r_ahead_msg:(w,hw)=>`TL TB ${w}g vượt dự kiến tuần tới (${hw}g) — tăng trưởng xuất sắc.<br>Lưu ý: đảm bảo mẫu đại diện, tránh chỉ bắt tôm lớn.`,
+  r_slow_title:'Tăng trưởng hơi chậm',
+  r_slow_msg:(w,lw)=>`TL TB ${w}g thấp hơn dự kiến tuần trước (${lw}g).<br>Kiểm tra: ① Chất lượng nước (DO, pH, amoniac) ② Lượng ăn trên sàng ③ Tỷ lệ chết bất thường`,
+  r_normal_title:'Tăng trưởng bình thường',
+  r_normal_msg:(w,lw,hw,doc,gw)=>`TL TB ${w}g trong phạm vi bình thường (${lw}–${hw}g), phù hợp mục tiêu DOC ${doc} (${gw}g).`,
+  r_rec:(w,sr)=>`TĂ khuyến nghị (TL ${w}g tra bảng)<span style="color:var(--text2);font-weight:400"> · SR ${sr}%</span>`,
+  r_min:'Tối thiểu', r_max:'Tối đa',
+  a_over:(a,m)=>`🚫 TĂ hôm nay ${a}kg vượt giới hạn trên (${m}kg). Kiểm tra lượng dư trên sàng hoặc tăng ước tính SR.`,
+  a_under:(a,m)=>`⚠ TĂ hôm nay ${a}kg dưới giới hạn dưới (${m}kg). Kiểm tra chất lượng nước, chuyển đổi thức ăn, hoặc thay đổi SR.`,
+  a_ok:(a,mn,mx)=>`✓ TĂ hôm nay ${a}kg trong phạm vi khuyến nghị (${mn}–${mx}kg).`,
+  a_feed_change:(doc,name,kg)=>`⚡ <strong>DOC ${doc}: chuyển sang ${name}</strong> — giảm 10–15% (khoảng ${kg}kg) cho đến khi tôm thích nghi.`,
+},
+th: {
+  title:'🦐 เครื่องมือคำนวณอาหารกุ้งขาว',
+  tab_calc:'🔬 คำนวณชีวมวล', tab_table:'📊 ตารางอ้างอิง', tab_guide:'📋 คู่มือ',
+  card_settings:'ตั้งค่าพื้นฐาน', sub_once:'กรอกครั้งเดียวต่อรุ่น',
+  label_stocked:'จำนวนลูกกุ้ง (ตัว)', label_survrate:'อัตรารอดโดยประมาณ (%)',
+  card_doc:'เลือก DOC (วันที่เลี้ยง)',
+  card_today:'ข้อมูลวันนี้', sub_required:'จำเป็น',
+  label_feed:'อาหารที่ให้จริงวันนี้ (kg)', label_weight:'น้ำหนักเฉลี่ยกุ้งวันนี้ (g)',
+  label_vol:'ปริมาตรน้ำ (m³)', label_vol_sub:'ไม่บังคับ · สำหรับคำนวณความหนาแน่น',
+  ph_feed:'เช่น 15', ph_weight:'เช่น 5.5', ph_vol:'เช่น 3000',
+  btn_calc:'คำนวณ',
+  wm_stock:'ปล่อยกุ้ง', wm_harvest:'เก็บเกี่ยว',
+  table_title:'ตารางอ้างอิงอาหารรายสัปดาห์',
+  table_hint:'ฐาน: 100,000 ตัว · SR 100%',
+  table_hint2:'อาหารจริง = ค่าในตาราง × จำนวนกุ้ง × SR ÷ 100,000',
+  th_week:'สัปดาห์', th_doc:'DOC', th_weight:'น้ำหนัก(g)', th_daily:'อาหาร/วัน<br>(kg/1แสน)', th_rate:'FR%',
+  guide_formula:'สูตรหลัก', guide_steps:'วิธีใช้งาน', guide_warn:'⚠ ข้อควรระวัง',
+  f1:'อาหารแนะนำ = ค่าตาราง (kg/1แสน) × จำนวนกุ้ง × SR ÷ 100,000',
+  f2:'ชีวมวล (kg) = อาหารจริง (kg) ÷ FR%',
+  f3:'ประมาณจำนวนกุ้ง = ชีวมวล (kg) × 1,000,000 ÷ น้ำหนักเฉลี่ย (g)',
+  f4:'SR โดยประมาณ = จำนวนกุ้งโดยประมาณ ÷ จำนวนที่ปล่อย × 100%',
+  s1:'แท็บคำนวณชีวมวล: กรอกจำนวนกุ้ง, SR และเลื่อน slider DOC เพื่อดูปริมาณอาหารที่แนะนำ',
+  s2:'กรอกอาหารจริงวันนี้ — ระบบจะตรวจสอบว่าอยู่ในช่วงที่แนะนำหรือไม่',
+  s3:'กรอกอาหารจริงและน้ำหนักเฉลี่ยเพื่อคำนวณย้อนกลับหาชีวมวลและจำนวนกุ้ง',
+  s4:'SR ที่คำนวณย้อนได้คงที่หลายวันสามารถใช้เป็นฐานประมาณสำหรับรุ่นถัดไป',
+  w1:'<strong>กระด้งอาหาร (anco) สำคัญมาก</strong>: ตรวจสอบทุกครั้งที่ให้อาหาร; ลดถ้าเหลือ, เพิ่มถ้าหมดเร็วเกินไป',
+  w2:'เมื่อเปลี่ยนเบอร์อาหาร ให้ลด 10–15% จนกว่ากุ้งจะปรับตัว แล้วค่อยเพิ่มขึ้น',
+  w3:'ตารางใช้ฐาน 100,000 ตัว ปรับตามจำนวนกุ้งจริงและ SR ติดตามคุณภาพน้ำเมื่อเลี้ยงหนาแน่น',
+  hint_bottom:'OMT Beta. ข้อมูลไม่ได้บันทึกบนคลาวด์ ติดต่อตัวแทน OMT เพื่อรับการสนับสนุน',
+  r_biomass:'ชีวมวลในบ่อ', r_count:'จำนวนกุ้งโดยประมาณ',
+  r_unit_wan:'×หมื่นตัว', r_unit_tail:'ตัว',
+  r_surv:'SR โดยประมาณ', r_surv_base:'ค่าตั้งต้น', r_surv_diff:'เทียบกับค่าตั้งต้น', r_stock_base:'ฐานจำนวนที่ปล่อย',
+  r_density:'ความหนาแน่นชีวมวล', r_density_ok:'✓ ความหนาแน่นปกติ', r_density_hi:'⚠ ความหนาแน่นสูง — ระวัง DO',
+  r_growth:'สถานะการเจริญเติบโต', r_growth_range:'ช่วงปกติ',
+  r_ahead_title:'โตเร็วกว่าเป้า!',
+  r_ahead_msg:(w,hw)=>`น้ำหนักเฉลี่ย ${w}g เกินเป้าสัปดาห์หน้า (${hw}g) — เติบโตดีมาก<br>หมายเหตุ: ตรวจสอบความเป็นตัวแทนของการสุ่มตัวอย่าง`,
+  r_slow_title:'การเจริญเติบโตช้าเล็กน้อย',
+  r_slow_msg:(w,lw)=>`น้ำหนักเฉลี่ย ${w}g ต่ำกว่าเป้าสัปดาห์ที่แล้ว (${lw}g)<br>ตรวจสอบ: ① คุณภาพน้ำ (DO, pH, แอมโมเนีย) ② การกินอาหาร ③ การตายผิดปกติ`,
+  r_normal_title:'การเจริญเติบโตปกติ',
+  r_normal_msg:(w,lw,hw,doc,gw)=>`น้ำหนักเฉลี่ย ${w}g อยู่ในช่วงปกติ (${lw}–${hw}g) ตรงกับเป้า DOC ${doc} (${gw}g)`,
+  r_rec:(w,sr)=>`อาหารที่แนะนำต่อวัน (น้ำหนัก ${w}g)<span style="color:var(--text2);font-weight:400"> · SR ${sr}%</span>`,
+  r_min:'ขั้นต่ำ', r_max:'สูงสุด',
+  a_over:(a,m)=>`🚫 อาหารวันนี้ ${a}kg เกินขีดจำกัดบน (${m}kg) ตรวจกระด้งหรือเพิ่ม SR`,
+  a_under:(a,m)=>`⚠ อาหารวันนี้ ${a}kg ต่ำกว่าขีดจำกัดล่าง (${m}kg) ตรวจคุณภาพน้ำหรือการเปลี่ยนอาหาร`,
+  a_ok:(a,mn,mx)=>`✓ อาหารวันนี้ ${a}kg อยู่ในช่วงที่แนะนำ (${mn}–${mx}kg)`,
+  a_feed_change:(doc,name,kg)=>`⚡ <strong>DOC ${doc}: เปลี่ยน${name}</strong> — ลด 10–15% (ประมาณ ${kg}kg) จนกว่ากุ้งจะปรับตัว`,
+},
+};
+
+function applyLang(lang) {
+  currentLang = lang;
+  const t = LANG[lang];
+  // Header & tabs
+  document.getElementById('hdr-title').innerHTML = t.title;
+  document.getElementById('tab-calc').innerHTML  = t.tab_calc;
+  document.getElementById('tab-table').innerHTML = t.tab_table;
+  document.getElementById('tab-guide').innerHTML = t.tab_guide;
+  // Lang buttons
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === ({zh:'中文',en:'EN',id:'ID',vi:'VI',th:'TH'})[lang]);
+  });
+  // Card 1 – settings
+  document.getElementById('lbl-settings').innerHTML   = t.card_settings;
+  document.getElementById('lbl-once').innerHTML       = t.sub_once;
+  document.getElementById('lbl-stocked').innerHTML    = t.label_stocked;
+  document.getElementById('lbl-survrate').innerHTML   = t.label_survrate;
+  // Card 2 – DOC
+  document.getElementById('lbl-doc').innerHTML        = t.card_doc;
+  document.getElementById('lbl-wm-stock').innerHTML   = t.wm_stock;
+  document.getElementById('lbl-wm-harvest').innerHTML = t.wm_harvest;
+  // Card 3 – today
+  document.getElementById('lbl-today').innerHTML      = t.card_today;
+  document.getElementById('lbl-required').innerHTML   = t.sub_required;
+  document.getElementById('lbl-feed').innerHTML       = t.label_feed;
+  document.getElementById('lbl-weight').innerHTML     = t.label_weight;
+  document.getElementById('lbl-vol').innerHTML        = t.label_vol;
+  document.getElementById('lbl-vol-sub').innerHTML    = t.label_vol_sub;
+  document.getElementById('btn-calc').innerHTML       = t.btn_calc;
+  document.getElementById('actualKg').placeholder     = t.ph_feed;
+  document.getElementById('todayWeight').placeholder  = t.ph_weight;
+  document.getElementById('pondVol').placeholder      = t.ph_vol;
+  // Table page
+  document.getElementById('lbl-table-title').innerHTML = t.table_title;
+  document.getElementById('lbl-table-hint').innerHTML  = t.table_hint;
+  document.getElementById('lbl-table-hint2').innerHTML = t.table_hint2;
+  document.getElementById('th-week').innerHTML   = t.th_week;
+  document.getElementById('th-weight').innerHTML = t.th_weight;
+  document.getElementById('th-daily').innerHTML  = t.th_daily;
+  document.getElementById('th-rate').innerHTML   = t.th_rate;
+  // Guide page
+  document.getElementById('lbl-formula').innerHTML  = t.guide_formula;
+  document.getElementById('lbl-steps').innerHTML    = t.guide_steps;
+  document.getElementById('lbl-warn').innerHTML     = t.guide_warn;
+  document.getElementById('f1').innerHTML = t.f1;
+  document.getElementById('f2').innerHTML = t.f2;
+  document.getElementById('f3').innerHTML = t.f3;
+  document.getElementById('f4').innerHTML = t.f4;
+  document.getElementById('s1').innerHTML = t.s1;
+  document.getElementById('s2').innerHTML = t.s2;
+  document.getElementById('s3').innerHTML = t.s3;
+  document.getElementById('s4').innerHTML = t.s4;
+  document.getElementById('w1').innerHTML = t.w1;
+  document.getElementById('w2').innerHTML = t.w2;
+  document.getElementById('w3').innerHTML = t.w3;
+  document.getElementById('lbl-hint-bottom').innerHTML = t.hint_bottom;
+  // Re-render results with new language
+  calcMain();
+}
+
+function setLang(lang) {
+  applyLang(lang);
+}
+
+// 初始化
+window.addEventListener('DOMContentLoaded', function () {
+  calcMain();
+});
+</script>
+</body>
+</html>
