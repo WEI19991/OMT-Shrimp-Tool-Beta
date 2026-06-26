@@ -632,6 +632,14 @@ function parseRateRange(rows) {
 
 // ── 多語系 ───────────────────────────────────────────────────────
 let currentLang = 'zh';
+function detectLang() {
+  const l = (navigator.language || navigator.userLanguage || '').toLowerCase();
+  if (l.startsWith('th')) return 'th';
+  if (l.startsWith('id')) return 'id';
+  if (l.startsWith('vi')) return 'vi';
+  if (l.startsWith('en')) return 'en';
+  return 'zh';
+}
 
 const LANG = {
 zh: {
@@ -937,7 +945,11 @@ function setLang(lang) {
 
 // 初始化
 window.addEventListener('DOMContentLoaded', function () {
-  calcMain();
+  currentLang = detectLang();
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.querySelector(`.lang-btn[onclick="setLang('${currentLang}')"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+  applyLang();
   // Visitor counter
   fetch('https://api.counterapi.dev/v1/omt-shrimp/beta-visits/up')
     .then(r => r.json())
