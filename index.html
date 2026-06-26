@@ -949,7 +949,7 @@ window.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
   const activeBtn = document.querySelector(`.lang-btn[onclick="setLang('${currentLang}')"]`);
   if (activeBtn) activeBtn.classList.add('active');
-  applyLang();
+  applyLang(currentLang);
   // Visitor counter
   fetch('https://api.counterapi.dev/v1/omt-shrimp/beta-visits/up')
     .then(r => r.json())
