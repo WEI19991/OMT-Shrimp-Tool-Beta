@@ -40,7 +40,7 @@
                 display:flex; align-items:center; justify-content:space-between; }
   .card-sub { font-size:11px; color:var(--text2); font-weight:400; }
 
-  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; align-items:end; }
   .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
   .input-group { display:flex; flex-direction:column; gap:5px; }
   .input-label { font-size:11px; color:var(--text2); font-weight:500; }
@@ -136,6 +136,10 @@
               border:1.5px solid rgba(255,255,255,.4); background:transparent; color:rgba(255,255,255,.7);
               cursor:pointer; font-family:var(--font); letter-spacing:.03em; }
   .lang-btn.active { background:rgba(255,255,255,.25); color:#fff; border-color:rgba(255,255,255,.8); }
+
+  .visitor-bar { text-align:center; padding:14px 16px; font-size:11px; color:var(--text2);
+                 border-top:1px solid var(--border); background:var(--card); margin-top:4px; }
+  .visitor-bar .vc-count { font-size:15px; font-weight:700; color:var(--teal); }
 </style>
 </head>
 <body>
@@ -934,7 +938,19 @@ function setLang(lang) {
 // 初始化
 window.addEventListener('DOMContentLoaded', function () {
   calcMain();
+  // Visitor counter
+  fetch('https://api.counterapi.dev/v1/omt-shrimp/beta-visits/up')
+    .then(r => r.json())
+    .then(d => {
+      const el = document.getElementById('vc-num');
+      if (el && d.count) el.textContent = d.count.toLocaleString();
+    })
+    .catch(() => {});
 });
 </script>
+<div class="visitor-bar">
+  🦐 OMT Beta · <span class="vc-count" id="vc-num">—</span> 次使用紀錄
+</div>
+
 </body>
 </html>
